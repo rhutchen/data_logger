@@ -1,0 +1,103 @@
+import os
+import csv
+import time 
+from time import sleep  
+import RPi.GPIO as GPIO 
+import board
+import adafruit_tca9548a
+import adafruit_ahtx0
+import adafruit_veml7700
+
+
+data_path='/home/pi/Documents/Data/'
+i2c = board.I2C()
+
+tca = adafruit_tca9548a.TCA9548A(i2c , 0x70)
+tca_2 = adafruit_tca9548a.TCA9548A(i2c, 0x71)
+print(tca)
+
+
+rh_sensor_1 = adafruit_ahtx0.AHTx0(tca[0])
+rh_sensor_2 = adafruit_ahtx0.AHTx0(tca[1])
+rh_sensor_3 = adafruit_ahtx0.AHTx0(tca[2])
+rh_sensor_4 = adafruit_ahtx0.AHTx0(tca[3])
+rh_sensor_5 = adafruit_ahtx0.AHTx0(tca[4])
+rh_sensor_6 = adafruit_ahtx0.AHTx0(tca[5])
+
+for channel in range(8):
+    if tca[channel].try_lock():
+        print("Channel {}:".format(channel), end="")
+        addresses = tca[channel].scan()
+        print([hex(address) for address in addresses if address != 0x70])
+        tca[channel].unlock()
+
+for channel in range(8):
+    if tca_2[channel].try_lock():
+        print("Channel {}:".format(channel), end="")
+        addresses = tca_2[channel].scan()
+        print([hex(address) for address in addresses if address != 0x71])
+        tca_2[channel].unlock()
+
+light_sensor_1 = adafruit_veml7700.VEML7700(tca[6])
+light_sensor_2 = adafruit_veml7700.VEML7700(tca[7])
+light_sensor_3 = adafruit_veml7700.VEML7700(tca_2[0])
+light_sensor_4 = adafruit_veml7700.VEML7700(tca_2[1])
+light_sensor_5 = adafruit_veml7700.VEML7700(tca_2[3])
+light_sensor_6 = adafruit_veml7700.VEML7700(tca_2[2])
+
+
+
+        
+
+
+i=0
+while True:
+    date=time.strftime ("%Y_%m_%d")
+    
+    year_month = time.strftime ("%Y_%m")
+    month_directory = data_path + year_month
+    if not os.path.exists(month_directory):
+        os.makedirs(month_directory)
+    
+    log_name = month_directory + '/' + date+'_raw_data.csv'
+    
+    temperature_1 = rh_sensor_1.temperature
+    humidity_1 = rh_sensor_1.relative_humidity
+    temperature_2 = rh_sensor_2.temperature
+    humidity_2 = rh_sensor_2.relative_humidity
+    temperature_3 = rh_sensor_3.temperature
+    humidity_3 = rh_sensor_3.relative_humidity
+    temperature_4 = rh_sensor_4.temperature
+    humidity_4 = rh_sensor_4.relative_humidity
+    temperature_5 = rh_sensor_5.temperature
+    humidity_5 = rh_sensor_5.relative_humidity
+    temperature_6 = rh_sensor_6.temperature
+    humidity_6 = rh_sensor_6.relative_humidity
+
+
+
+    light_1 = light_sensor_1.light
+    lux_1 = light_sensor_1.lux
+    light_2 = light_sensor_2.light
+    lux_2 = light_sensor_2.lux
+    light_3 = light_sensor_3.light
+    lux_3 = light_sensor_3.lux
+    light_4 = light_sensor_4.light
+    lux_4 = light_sensor_4.lux
+    light_5 = light_sensor_5.light
+    lux_5 = light_sensor_5.lux
+    light_6 = light_sensor_6.light
+    lux_6 = light_sensor_6.lux
+    
+    output = [temperature_2,temperature_2,temperature_3,temperature_4,temperature_5,temperature_6,
+    humidity_1,humidity_2,humidity_3,humidity_4,humidity_5,humidity_6,
+    light_1,light_2,light_3,light_4,light_5,light_6,
+    lux_1,lux_2,lux_3,lux_4,lux_5,lux_6]
+    
+    with open(log_name, 'a') as csvfile:
+        
+        logcsv = csv.writer(csvfile, delimiter=',')
+        logcsv.writerow([time.strftime ("%H:%M:%S")] + output)
+    
+    print([time.strftime ("%H:%M:%S")] + output)
+    sleep(1); 
